@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebAuthn Demo</title>
+</head>
+<body>
+  <h1>WebAuthn Demo</h1>
+
+  <!-- Form untuk pendaftaran -->
+  <h2>Register</h2>
+  <form id="registerForm">
+    <input type="text" id="registerUsername" placeholder="Enter username" required />
+    <button type="submit">Register</button>
+  </form>
+
+  <!-- Form untuk autentikasi -->
+  <h2>Authenticate</h2>
+  <form id="authForm">
+    <input type="text" id="authUsername" placeholder="Enter username" required />
+    <button type="submit">Authenticate</button>
+  </form>
+
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('registerUsername').value;
+
+      // Membuat credential baru
+      const publicKey = {
+        challenge: new Uint8Array(32),
+        rp: { name: "Demo Server" },
+        user: {
+          id: new Uint8Array(16),
+          name: username,
+          displayName: username,
+        },
+        pubKeyCredParams: [{ alg: -7, type: "public-key" }]
+      };
+
+      const credential = await navigator.credentials.create({ publicKey });
+      if (credential) {
+        // Mengirim kunci publik ke server
+        fetch('/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            publicKey: credential
+          })
+        })
+        .then(res => res.json())
+        .then(data => alert(data.message));
+      }
+    });
+
+    document.getElementById('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('authUsername').value;
+
+      // Menyiapkan challenge untuk autentikasi
+      const publicKey = {
+        challenge: new Uint8Array(32),
+        allowCredentials: [{ id: new Uint8Array(16), type: "public-key" }],
+      };
+
+      const assertion = await navigator.credentials.get({ publicKey });
+      if (assertion) {
+        // Mengirim signature ke server untuk verifikasi
+        fetch('/authenticate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            signature: assertion
+          })
+        })
+        .then(res => res.json())
+        .then(data => alert(data.message));
+      }
+    });
+  </script>
+</body>
+</html>
