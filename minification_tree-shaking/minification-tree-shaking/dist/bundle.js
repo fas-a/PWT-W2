@@ -1,0 +1,1 @@
+(()=>{"use strict";console.log("Main function started"),console.log("Hello, World!"),function(){console.log("Large function started");for(let o=0;o<1e4;o++)console.log(o);console.log("Large function ended")}()})();
